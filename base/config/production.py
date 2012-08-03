@@ -26,4 +26,14 @@ OAUTH_TWITTER = dict(
     consumer_secret='Pt1t2PjzKu8vsX5ixbFKu5gNEAekYrbpJrlsQMIwquc'
 )
 
+# Twitchi
+# -------
+APPS += 'tweetchi',
+TWEETCHI_CONSUMER_KEY = "MchK8XibR3cyEjm0U9Fwg"
+TWEETCHI_CONSUMER_SECRET = "Z2NJuyf6lMU3lDTxoFAbKz7obkdOXjV3AgA4oLk1ns"
+TWEETCHI_ACCOUNT = 'Tweetchi'
+TWEETCHI_OAUTH_TOKEN = "633177233-o8Px6HR0uWWrun63xqCnO8iHSni2iFpMNoKgNQoJ"
+TWEETCHI_OAUTH_SECRET = "AmSqA4bICxLP79CFW1wFvXXvygecoqhPDJbhuFYNQ2w"
+
+
 # pymode:lint_ignore=W0614,W404
