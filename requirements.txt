@@ -14,3 +14,8 @@ Flask-Mail>=0.6.1
 Flask-OAuth>=0.11
 git+git://github.com/tomasd/flask-evolution.git#egg=Flask-Evolution==0.4
 nose==1.1.2
+
+# Twitchi
+# -------
+Twitter==1.8.0
+celery-with-redis==3.0
