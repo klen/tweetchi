@@ -19,7 +19,7 @@ class Tweetchi(object):
         self.consumer_secret = app.config.get('TWEETCHI_CONSUMER_SECRET', '')
         self.oauth_token = app.config.get('TWEETCHI_OAUTH_TOKEN', '')
         self.oauth_secret = app.config.get('TWEETCHI_OAUTH_SECRET', '')
-        self.beat_tick = app.config.get('TWEETCHI_BEAT_TICK', timedelta(minutes=10))
+        self.beat_tick = app.config.get('TWEETCHI_BEAT_TICK', timedelta(seconds=20))
         self.reply_tick = app.config.get('TWEETCHI_REPLAY_TICK', timedelta(seconds=40))
 
         self.twitter = Twitter(auth=OAuth(self.oauth_token, self.oauth_secret, self.consumer_key, self.consumer_secret))
@@ -41,6 +41,7 @@ class Tweetchi(object):
     def beat(self):
         tweetchi_beat.send(self)
         stack = self.stack
+        print stack
         while stack:
             message, params = stack.pop(0)
             self.update(message, **params)
