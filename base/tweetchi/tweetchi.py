@@ -5,7 +5,7 @@ from ..ext import cache
 from .signals import tweetchi_beat, tweetchi_reply
 
 
-class Tweetchi():
+class Tweetchi(object):
 
     def __init__(self, app=None):
         if app:
@@ -35,13 +35,17 @@ class Tweetchi():
         try:
             self.twitter.statuses.update(status=message, **kwargs)
         except TwitterError, e:
-            self.app.loger.error(e)
+            self.app.logger.info(message)
+            self.app.logger.error(e)
 
     def beat(self):
-        tweetchi_beat.send(self, app=self)
-        while self.stack:
-            message, params = self.stack.pop(0)
+        tweetchi_beat.send(self)
+        stack = self.stack
+        while stack:
+            message, params = stack.pop(0)
             self.update(message, **params)
+
+        self.stack = []
 
     def reply(self):
         mentions = self.twitter.statuses.mentions(
@@ -51,12 +55,30 @@ class Tweetchi():
         if not mentions:
             return False
 
-        mentions = sorted(mentions, key=lambda m: m['id'])
-        tweetchi_reply.send(self, app=self, mentions=mentions)
+        mentions = sorted(mentions, key=lambda m: m['id_str'])
+        tweetchi_reply.send(self, mentions=mentions)
+        self.since_id = mentions[-1]['id_str']
 
     @property
     def since_id(self):
         return cache.get('tweetchi.since_id') or 100
+
+    @since_id.setter
+    def since_id(self, value):
+        cache.set('tweetchi.since_id', value, timeout=3600 * 24 * 30)
+
+    @property
+    def stack(self):
+        return cache.get('tweetchi.stack') or []
+
+    @stack.setter
+    def stack(self, value):
+        cache.set('tweetchi.stack', value)
+
+    def say(self, value, **params):
+        stack = self.stack
+        stack.append((value, params))
+        self.stack = stack
 
 
 tweetchi = Tweetchi()
