@@ -1,1 +1,1 @@
-Flask and celery based twitter bot.
+Twitter bot based on flask and celery.
