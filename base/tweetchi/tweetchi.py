@@ -41,9 +41,9 @@ class Tweetchi(object):
     def beat(self):
         tweetchi_beat.send(self)
         stack = self.stack
-        print stack
         while stack:
             message, params = stack.pop(0)
+            self.app.logger.info(message)
             self.update(message, **params)
 
         self.stack = []
