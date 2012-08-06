@@ -1,5 +1,5 @@
 from twitter import oauth_dance, Twitter, TwitterError, OAuth
-from datetime import timedelta
+from datetime import timedelta, datetime
 
 from ..ext import cache
 from .signals import tweetchi_beat, tweetchi_reply
@@ -21,6 +21,7 @@ class Tweetchi(object):
         self.oauth_secret = app.config.get('TWEETCHI_OAUTH_SECRET', '')
         self.beat_tick = app.config.get('TWEETCHI_BEAT_TICK', timedelta(seconds=20))
         self.reply_tick = app.config.get('TWEETCHI_REPLAY_TICK', timedelta(seconds=40))
+        self.disable_timerange = app.config.get('TWEETCHI_DISABLE_TIMERANGE', None) or []
 
         self.twitter = Twitter(auth=OAuth(self.oauth_token, self.oauth_secret, self.consumer_key, self.consumer_secret))
         self.stack = []
@@ -39,16 +40,30 @@ class Tweetchi(object):
             self.app.logger.error(e)
 
     def beat(self):
+        " Updates twitter beat. "
+
+        if self.sleep():
+            return False
+
+        # Send signal
         tweetchi_beat.send(self)
+
+        # Send updates
         stack = self.stack
         while stack:
             message, params = stack.pop(0)
             self.app.logger.info(message)
             self.update(message, **params)
 
+        # Clean queue
         self.stack = []
 
     def reply(self):
+        " Parse replays twitter beat. "
+
+        if self.sleep():
+            return False
+
         mentions = self.twitter.statuses.mentions(
             since_id=self.since_id,
             count=200)
@@ -59,6 +74,11 @@ class Tweetchi(object):
         mentions = sorted(mentions, key=lambda m: m['id_str'])
         tweetchi_reply.send(self, mentions=mentions)
         self.since_id = mentions[-1]['id_str']
+
+    def sleep(self):
+        " Check tweetchi disabled time ranges. "
+        now = datetime.now()
+        return any(map(lambda t: now in t, self.disable_timerange))
 
     @property
     def since_id(self):

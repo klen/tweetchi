@@ -19,8 +19,9 @@ class TweetchiTest(TestCase):
 
     def test_tweetchi(self):
         from ..ext import cache
-
         from .tweetchi import tweetchi
+        from .timerange import timerange
+        from datetime import timedelta, datetime
         self.assertEqual(tweetchi.app, self.app)
 
         tweetchi.since_id = 143
@@ -33,3 +34,25 @@ class TweetchiTest(TestCase):
 
         tweetchi.say(2)
         self.assertEqual(tweetchi.stack, [(1, {}), (2, {})])
+
+        self.assertFalse(tweetchi.sleep())
+
+        now = datetime.now()
+        tweetchi.disable_timerange = [timerange('13:00', '15:30'), timerange(now, now + timedelta(hours=1))]
+        self.assertTrue(tweetchi.sleep())
+
+    def test_timerange(self):
+        from .timerange import timerange
+        from datetime import datetime, time
+
+        r1 = timerange('15:00', '17:00')
+        r2 = timerange((15, 00), (17, 00))
+        r3 = timerange(time(23, 0), time(2, 0))
+        self.assertEqual(r1, r2)
+        self.assertTrue(r3)
+
+        d = datetime(2012, 01, 01, 15, 33)
+        self.assertTrue(d in r1)
+
+        d = datetime(2012, 01, 01, 0, 33)
+        self.assertTrue(d in r3)
