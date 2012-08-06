@@ -1,6 +1,3 @@
-from .ext import cache
-
-
 def register_app(app):
     " Configure application. "
 
@@ -9,14 +6,13 @@ def register_app(app):
     tweetchi_reply.connect(reply)
 
 
-def beat(tweetchi):
-    test = cache.get('example.test') or 0
-    tweetchi.say('%s sheep' % test)
-    cache.set('example.test', test + 1)
+def beat(tweetchi, updates=None):
+    meta = updates and updates[-1] and updates[-1][1] or 1
+    tweetchi.say('%s sheep' % meta, meta=meta + 1)
 
 
 def reply(tweetchi, mentions=None):
     for m in mentions:
         tweetchi.update(
-            '@%s hey, %s sheep waz here' % (m['user']['screen_name'], cache.get('example.test')),
+            '@%s Hello!' % m['user']['screen_name'],
             in_reply_to_status_id=m['id_str'])

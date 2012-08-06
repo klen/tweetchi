@@ -41,7 +41,7 @@ class Tweetchi(object):
 
     def update(self, message, **kwargs):
         try:
-            self.twitter.statuses.update(status=message, **kwargs)
+            return self.twitter.statuses.update(status=message, **kwargs)
         except TwitterError, e:
             self.app.logger.info(message)
             self.app.logger.error(e)
@@ -52,18 +52,22 @@ class Tweetchi(object):
         if self.sleep():
             return False
 
-        # Send signal
-        tweetchi_beat.send(self)
+        updates = []
 
         # Send updates
         stack = self.stack
         while stack:
             message, params = stack.pop(0)
+            meta = params.pop('meta', None)
             self.app.logger.info(message)
-            self.update(message, **params)
+            response = self.update(message, **params)
+            updates.append((response, meta))
 
         # Clean queue
         self.stack = []
+
+        # Send signal
+        tweetchi_beat.send(self, updates=updates)
 
     def reply(self):
         " Parse replays twitter beat. "

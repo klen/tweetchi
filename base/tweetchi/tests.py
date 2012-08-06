@@ -37,7 +37,8 @@ class TweetchiTest(TestCase):
 
         tweetchi.update = Mock()
         tweetchi.beat()
-        self.assertEqual(tweetchi.stack, [])
+        self.assertEqual(tweetchi.stack, [('1 sheep', {'meta': 2})])
+        tweetchi.stack = []
 
         from .timerange import timerange
         from datetime import timedelta, datetime
