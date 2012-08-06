@@ -3,6 +3,7 @@ from datetime import timedelta, datetime
 
 from ..ext import cache
 from .signals import tweetchi_beat, tweetchi_reply
+from .timerange import timerange
 
 
 class Tweetchi(object):
@@ -22,9 +23,15 @@ class Tweetchi(object):
         self.beat_tick = app.config.get('TWEETCHI_BEAT_TICK', timedelta(seconds=20))
         self.reply_tick = app.config.get('TWEETCHI_REPLAY_TICK', timedelta(seconds=40))
         self.disable_timerange = app.config.get('TWEETCHI_DISABLE_TIMERANGE', None) or []
+        self.disable_timerange = map(timerange, self.disable_timerange)
 
         self.twitter = Twitter(auth=OAuth(self.oauth_token, self.oauth_secret, self.consumer_key, self.consumer_secret))
         self.stack = []
+
+        if not hasattr(self.app, 'extensions'):
+            self.app.extensions = dict()
+
+        self.app.extensions['collect'] = self
 
     def dance(self):
         oauth_token, oauth_token_secret = oauth_dance(self.account, self.consumer_key, self.consumer_secret)
