@@ -31,7 +31,7 @@ class Tweetchi(object):
         if not hasattr(self.app, 'extensions'):
             self.app.extensions = dict()
 
-        self.app.extensions['collect'] = self
+        self.app.extensions['tweetchi'] = self
 
     def dance(self):
         oauth_token, oauth_token_secret = oauth_dance(self.account, self.consumer_key, self.consumer_secret)
