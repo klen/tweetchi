@@ -54,16 +54,15 @@ class TweetchiTest(TestCase):
         from .timerange import timerange
         from datetime import timedelta, datetime
 
-        # Sleep test
-        self.assertFalse(tweetchi.sleep())
-
         now = datetime.now()
+        tweetchi_beat.disconnect(beat)
 
         tweetchi.sleep_timerange = map(lambda r: timerange(r, tz='Europe/Moscow'), [(now - timedelta(hours=2), now - timedelta(hours=1)), ])
-        self.assertFalse(tweetchi.sleep())
-        tweetchi.sleep_timerange = map(lambda r: timerange(r, tz='Europe/Moscow'), [(now, now + timedelta(hours=1)), ])
-        self.assertTrue(tweetchi.sleep())
+        tweetchi.say(22)
+        tweetchi.beat()
+        self.assertFalse(tweetchi.stack)
 
+        tweetchi.sleep_timerange = map(lambda r: timerange(r, tz='Europe/Moscow'), [(now, now + timedelta(hours=1)), ])
         tweetchi.say(22)
         tweetchi.beat()
         self.assertEqual(tweetchi.stack, [(22, {})])

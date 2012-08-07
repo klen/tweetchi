@@ -7,6 +7,16 @@ from .signals import tweetchi_beat, tweetchi_reply
 from .timerange import timerange
 
 
+def sleep(func):
+    def wrapper(tweetchi):
+        utcnow = utc.localize(datetime.utcnow())
+        zzz = any(map(lambda t: utcnow in t, tweetchi.sleep_timerange))
+        if not zzz:
+            return func(tweetchi)
+        tweetchi.app.logger.info('Sleep.')
+    return wrapper
+
+
 class Tweetchi(object):
 
     def __init__(self, app=None):
@@ -48,12 +58,18 @@ class Tweetchi(object):
             self.app.logger.info(message)
             self.app.logger.error(e)
 
+    def mentions(self):
+        try:
+            return self.twitter.statuses.mentions(
+                since_id=self.since_id,
+                count=200)
+
+        except TwitterError, e:
+            self.app.logger.error(e)
+
+    @sleep
     def beat(self):
         " Updates twitter beat. "
-        self.app.logger.info('Reply: %s (%s)', len(self.stack), int(self.sleep()))
-
-        if self.sleep():
-            return False
 
         updates = []
 
@@ -72,16 +88,11 @@ class Tweetchi(object):
         # Send signal
         tweetchi_beat.send(self, updates=updates)
 
+    @sleep
     def reply(self):
         " Parse replays twitter beat. "
-        self.app.logger.info('Reply: (%s)', int(self.sleep()))
 
-        if self.sleep():
-            return False
-
-        mentions = self.twitter.statuses.mentions(
-            since_id=self.since_id,
-            count=200)
+        mentions = self.mentions()
 
         if not mentions:
             return False
@@ -89,11 +100,6 @@ class Tweetchi(object):
         mentions = sorted(mentions, key=lambda m: m['id_str'])
         tweetchi_reply.send(self, mentions=mentions)
         self.since_id = mentions[-1]['id_str']
-
-    def sleep(self):
-        " Check tweetchi disabled time ranges. "
-        utcnow = utc.localize(datetime.utcnow())
-        return any(map(lambda t: utcnow in t, self.sleep_timerange))
 
     @property
     def since_id(self):
