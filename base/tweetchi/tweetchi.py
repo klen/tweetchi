@@ -1,6 +1,7 @@
 from twitter import oauth_dance, Twitter, TwitterError, OAuth
 from datetime import timedelta, datetime
 
+from pytz import utc
 from ..ext import cache
 from .signals import tweetchi_beat, tweetchi_reply
 from .timerange import timerange
@@ -23,7 +24,8 @@ class Tweetchi(object):
         self.beat_tick = app.config.get('TWEETCHI_BEAT_TICK', timedelta(seconds=20))
         self.reply_tick = app.config.get('TWEETCHI_REPLAY_TICK', timedelta(seconds=40))
         self.disable_timerange = app.config.get('TWEETCHI_DISABLE_TIMERANGE', None) or []
-        self.disable_timerange = map(timerange, self.disable_timerange)
+        self.disable_timezone = app.config.get('TWEETCHI_DISABLE_TIMEZONE', 'UTC')
+        self.disable_timerange = map(lambda r: timerange(r, tz=self.disable_timezone), self.disable_timerange)
 
         self.twitter = Twitter(auth=OAuth(self.oauth_token, self.oauth_secret, self.consumer_key, self.consumer_secret))
         self.stack = []
@@ -88,8 +90,8 @@ class Tweetchi(object):
 
     def sleep(self):
         " Check tweetchi disabled time ranges. "
-        now = datetime.now()
-        return any(map(lambda t: now in t, self.disable_timerange))
+        utcnow = utc.localize(datetime.utcnow())
+        return any(map(lambda t: utcnow in t, self.disable_timerange))
 
     @property
     def since_id(self):
