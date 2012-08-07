@@ -2,6 +2,9 @@ from datetime import time, datetime, date
 from pytz import utc, timezone
 
 
+utcdatetime = datetime.utcnow()
+
+
 class timerange:
 
     def __init__(self, *rang, **kwargs):
@@ -37,7 +40,7 @@ class timerange:
     def _to_tz(self, value):
         if not value.tzinfo:
             value = value.replace(tzinfo=self.tz)
-        temp = datetime.combine(date.today(), value) - value.tzinfo._utcoffset
+        temp = datetime.combine(date.today(), value) - value.tzinfo.utcoffset(utcdatetime)
         return temp.time()
 
     def __contains__(self, value):
