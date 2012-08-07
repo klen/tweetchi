@@ -7,6 +7,9 @@ from .tweetchi import tweetchi
 
 
 app = create_app()
+ctx = app.test_request_context()
+ctx.push()
+
 celery = Celery('tweetchi')
 celery.config_from_object(dict(
     BROKER_URL='redis://localhost:6379/0',
