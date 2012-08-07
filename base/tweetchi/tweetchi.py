@@ -50,6 +50,7 @@ class Tweetchi(object):
 
     def beat(self):
         " Updates twitter beat. "
+        self.app.logger.info('Reply: %s (%s)', len(self.stack), int(self.sleep()))
 
         if self.sleep():
             return False
@@ -73,6 +74,7 @@ class Tweetchi(object):
 
     def reply(self):
         " Parse replays twitter beat. "
+        self.app.logger.info('Reply: (%s)', int(self.sleep()))
 
         if self.sleep():
             return False
