@@ -15,7 +15,6 @@ class TweetchiTest(TestCase):
     def setUp(self):
         tweetchi.stack = []
         tweetchi_beat._clear_state()
-        tweetchi.sleep_timerange = []
         db.create_all()
 
     def tearDown(self):
