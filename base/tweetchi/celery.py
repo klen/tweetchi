@@ -1,14 +1,17 @@
 from __future__ import absolute_import
 
 from celery import Celery
+from flask import current_app as app
+from twitter import Twitter, OAuth
 
 from ..app import create_app
 from .tweetchi import tweetchi
 
 
-app = create_app()
-ctx = app.test_request_context()
-ctx.push()
+if not app:
+    app = create_app()
+    ctx = app.test_request_context()
+    ctx.push()
 
 celery = Celery('tweetchi')
 celery.config_from_object(dict(
@@ -36,3 +39,9 @@ def beat():
 @celery.task(ignore_result=True)
 def reply():
     tweetchi.reply()
+
+
+@celery.task(ignore_result=True)
+def update(message, *args, **kwargs):
+    twitter = Twitter(auth=OAuth(*args))
+    twitter.statuses.update(status=message, **kwargs)

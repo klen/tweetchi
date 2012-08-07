@@ -20,11 +20,14 @@ class Tweetchi(object):
         self.consumer_secret = app.config.get('TWEETCHI_CONSUMER_SECRET', '')
         self.oauth_token = app.config.get('TWEETCHI_OAUTH_TOKEN', '')
         self.oauth_secret = app.config.get('TWEETCHI_OAUTH_SECRET', '')
-        self.beat_schedule = app.config.get('TWEETCHI_BEAT_SCHEDULE', timedelta(seconds=20))
-        self.reply_schedule = app.config.get('TWEETCHI_REPLAY_SCHEDULE', timedelta(seconds=40))
+        self.beat_schedule = app.config.get(
+            'TWEETCHI_BEAT_SCHEDULE', timedelta(seconds=20))
+        self.reply_schedule = app.config.get(
+            'TWEETCHI_REPLAY_SCHEDULE', timedelta(seconds=40))
         self.timezone = app.config.get('TWEETCHI_TIMEZONE', 'UTC')
 
-        self.twitter = Twitter(auth=OAuth(self.oauth_token, self.oauth_secret, self.consumer_key, self.consumer_secret))
+        self.twitter = Twitter(auth=OAuth(self.oauth_token, self.oauth_secret,
+                               self.consumer_key, self.consumer_secret))
         self.stack = []
 
         if not hasattr(self.app, 'extensions'):
@@ -33,12 +36,19 @@ class Tweetchi(object):
         self.app.extensions['tweetchi'] = self
 
     def dance(self):
-        oauth_token, oauth_token_secret = oauth_dance(self.account, self.consumer_key, self.consumer_secret)
+        oauth_token, oauth_token_secret = oauth_dance(
+            self.account, self.consumer_key, self.consumer_secret)
 
         print "OAUTH_TOKEN: %s" % oauth_token
         print "OAUTH_SECRET: %s" % oauth_token_secret
 
-    def update(self, message, **kwargs):
+    def update(self, message, async=False, **kwargs):
+        " Post twitter status. "
+        if async:
+            from .celery import update as cupdate
+            return cupdate.delay(
+                message, self.oauth_token, self.oauth_secret, self.consumer_key, self.consumer_secret, **kwargs)
+
         try:
             return self.twitter.statuses.update(status=message, **kwargs)
         except TwitterError, e:

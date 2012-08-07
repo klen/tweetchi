@@ -8,7 +8,8 @@ def register_app(app):
 
 def beat(tweetchi, updates=None):
     meta = updates and updates[-1] and updates[-1][1] or 1
-    tweetchi.say('%s sheep' % meta, meta=meta + 1)
+    meta += 1
+    tweetchi.say('%s sheep' % meta, meta=meta)
 
 
 def reply(tweetchi, mentions=None):
