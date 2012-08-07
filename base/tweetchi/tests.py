@@ -58,9 +58,9 @@ class TweetchiTest(TestCase):
         self.assertFalse(tweetchi.sleep())
 
         now = datetime.now()
-        tweetchi.disable_timerange = map(lambda r: timerange(r, tz='Europe/Moscow'), [(now, now + timedelta(hours=1)), ])
+        tweetchi.sleep_timerange = map(lambda r: timerange(r, tz='Europe/Moscow'), [(now, now + timedelta(hours=1)), ])
         self.assertFalse(tweetchi.sleep())
-        tweetchi.disable_timerange = map(lambda r: timerange(r, tz='Europe/Moscow'), [(now - timedelta(hours=2), now + timedelta(hours=2)), ])
+        tweetchi.sleep_timerange = map(lambda r: timerange(r, tz='Europe/Moscow'), [(now - timedelta(hours=2), now + timedelta(hours=2)), ])
         self.assertTrue(tweetchi.sleep())
 
         tweetchi.say(22)

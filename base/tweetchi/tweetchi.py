@@ -23,9 +23,9 @@ class Tweetchi(object):
         self.oauth_secret = app.config.get('TWEETCHI_OAUTH_SECRET', '')
         self.beat_tick = app.config.get('TWEETCHI_BEAT_TICK', timedelta(seconds=20))
         self.reply_tick = app.config.get('TWEETCHI_REPLAY_TICK', timedelta(seconds=40))
-        self.disable_timerange = app.config.get('TWEETCHI_DISABLE_TIMERANGE', None) or []
-        self.disable_timezone = app.config.get('TWEETCHI_DISABLE_TIMEZONE', 'UTC')
-        self.disable_timerange = map(lambda r: timerange(r, tz=self.disable_timezone), self.disable_timerange)
+        self.sleep_timerange = app.config.get('TWEETCHI_SLEEP_TIMERANGE', None) or []
+        self.timezone = app.config.get('TWEETCHI_TZ', 'UTC')
+        self.sleep_timerange = map(lambda r: timerange(r, tz=self.timezone), self.sleep_timerange)
 
         self.twitter = Twitter(auth=OAuth(self.oauth_token, self.oauth_secret, self.consumer_key, self.consumer_secret))
         self.stack = []
@@ -93,7 +93,7 @@ class Tweetchi(object):
     def sleep(self):
         " Check tweetchi disabled time ranges. "
         utcnow = utc.localize(datetime.utcnow())
-        return any(map(lambda t: utcnow in t, self.disable_timerange))
+        return any(map(lambda t: utcnow in t, self.sleep_timerange))
 
     @property
     def since_id(self):
