@@ -52,21 +52,11 @@ class TweetchiTest(TestCase):
         self.assertEqual(tweetchi.stack, [('1 sheep', {'meta': 2})])
         tweetchi.stack = []
 
-        from .timerange import timerange
-        from datetime import timedelta, datetime
-
-        now = datetime.now()
         tweetchi_beat.disconnect(beat)
 
-        tweetchi.sleep_timerange = map(lambda r: timerange(r, tz='Europe/Moscow'), [(now - timedelta(hours=2), now - timedelta(hours=1)), ])
         tweetchi.say(22)
         tweetchi.beat()
         self.assertFalse(tweetchi.stack)
-
-        tweetchi.sleep_timerange = map(lambda r: timerange(r, tz='Europe/Moscow'), [(now, now + timedelta(hours=1)), ])
-        tweetchi.say(22)
-        tweetchi.beat()
-        self.assertEqual(tweetchi.stack, [(22, {})])
 
     def test_timerange(self):
         from .timerange import timerange

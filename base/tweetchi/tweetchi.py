@@ -1,20 +1,9 @@
-from twitter import oauth_dance, Twitter, TwitterError, OAuth
-from datetime import timedelta, datetime
+from datetime import timedelta
 
-from pytz import utc
+from twitter import oauth_dance, Twitter, TwitterError, OAuth
+
 from ..ext import cache
 from .signals import tweetchi_beat, tweetchi_reply
-from .timerange import timerange
-
-
-def sleep(func):
-    def wrapper(tweetchi):
-        utcnow = utc.localize(datetime.utcnow())
-        zzz = any(map(lambda t: utcnow in t, tweetchi.sleep_timerange))
-        if not zzz:
-            return func(tweetchi)
-        tweetchi.app.logger.info('Sleep.')
-    return wrapper
 
 
 class Tweetchi(object):
@@ -31,11 +20,9 @@ class Tweetchi(object):
         self.consumer_secret = app.config.get('TWEETCHI_CONSUMER_SECRET', '')
         self.oauth_token = app.config.get('TWEETCHI_OAUTH_TOKEN', '')
         self.oauth_secret = app.config.get('TWEETCHI_OAUTH_SECRET', '')
-        self.beat_tick = app.config.get('TWEETCHI_BEAT_TICK', timedelta(seconds=20))
-        self.reply_tick = app.config.get('TWEETCHI_REPLAY_TICK', timedelta(seconds=40))
-        self.sleep_timerange = app.config.get('TWEETCHI_SLEEP_TIMERANGE', None) or []
-        self.timezone = app.config.get('TWEETCHI_TZ', 'UTC')
-        self.sleep_timerange = map(lambda r: timerange(r, tz=self.timezone), self.sleep_timerange)
+        self.beat_schedule = app.config.get('TWEETCHI_BEAT_SCHEDULE', timedelta(seconds=20))
+        self.reply_schedule = app.config.get('TWEETCHI_REPLAY_SCHEDULE', timedelta(seconds=40))
+        self.timezone = app.config.get('TWEETCHI_TIMEZONE', 'UTC')
 
         self.twitter = Twitter(auth=OAuth(self.oauth_token, self.oauth_secret, self.consumer_key, self.consumer_secret))
         self.stack = []
@@ -67,7 +54,6 @@ class Tweetchi(object):
         except TwitterError, e:
             self.app.logger.error(e)
 
-    @sleep
     def beat(self):
         " Updates twitter beat. "
 
@@ -88,7 +74,6 @@ class Tweetchi(object):
         # Send signal
         tweetchi_beat.send(self, updates=updates)
 
-    @sleep
     def reply(self):
         " Parse replays twitter beat. "
 
