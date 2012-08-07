@@ -3,6 +3,8 @@ from flask_testing import TestCase
 from ..app import create_app
 from ..config import test
 from ..ext import db
+from .signals import tweetchi_beat
+from .tweetchi import tweetchi
 
 
 class TweetchiTest(TestCase):
@@ -11,15 +13,18 @@ class TweetchiTest(TestCase):
         return create_app(test)
 
     def setUp(self):
+        tweetchi.stack = []
+        tweetchi_beat._clear_state()
         db.create_all()
 
     def tearDown(self):
+        tweetchi.stack = []
+        tweetchi_beat._clear_state()
         db.session.remove()
         db.drop_all()
 
     def test_tweetchi(self):
         from ..ext import cache
-        from .tweetchi import tweetchi
         self.assertEqual(tweetchi.app, self.app)
 
         tweetchi.since_id = 143
@@ -32,6 +37,12 @@ class TweetchiTest(TestCase):
 
         tweetchi.say(2)
         self.assertEqual(tweetchi.stack, [(1, {}), (2, {})])
+
+        def beat(tweetchi, updates=None):
+            meta = updates and updates[-1] and updates[-1][1] or 1
+            tweetchi.say('%s sheep' % meta, meta=meta + 1)
+
+        tweetchi_beat.connect(beat)
 
         from mock import Mock
 
