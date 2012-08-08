@@ -7,6 +7,7 @@ from celery.schedules import crontab
 
 from ..ext import cache
 from .signals import tweetchi_beat, tweetchi_reply
+from .types import Status
 
 
 def twitter_error(func):
@@ -77,15 +78,17 @@ class Tweetchi(object):
                                  self.config.get('CONSUMER_KEY'),
                                  self.config.get('CONSUMER_SECRET'), **kwargs)
 
-        return self.twitter.statuses.update(status=message, **kwargs)
+        status = self.twitter.statuses.update(status=message, **kwargs)
+        return Status(status)
 
     @twitter_error
     def mentions(self):
         " Get account mentions. "
 
-        return self.twitter.statuses.mentions(
+        statuses = self.twitter.statuses.mentions(
             since_id=self.since_id,
             count=200)
+        return map(Status, statuses)
 
     def beat(self):
         " Updates twitter beat. "
@@ -97,8 +100,8 @@ class Tweetchi(object):
         while stack:
             message, params = stack.pop(0)
             meta = params.pop('meta', None)
-            response = self.update(message, **params)
-            updates.append((response, meta))
+            status = self.update(message, **params)
+            updates.append((status, meta))
 
         # Clean queue
         self.stack = []
@@ -108,15 +111,10 @@ class Tweetchi(object):
 
     def reply(self):
         " Parse replays twitter beat. "
-
-        mentions = self.mentions()
-
-        if not mentions:
-            return False
-
-        mentions = sorted(mentions, key=lambda m: m['id_str'])
-        tweetchi_reply.send(self, mentions=mentions)
-        self.since_id = mentions[-1]['id_str']
+        statuses = sorted(self.statuses())
+        tweetchi_reply.send(self, mentions=statuses)
+        if statuses:
+            self.since_id = statuses[-1].id
 
     @property
     def since_id(self):
