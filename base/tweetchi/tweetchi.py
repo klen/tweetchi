@@ -15,9 +15,10 @@ def twitter_error(func):
 
     def wrapper(tweetchi, *args, **kwargs):
         try:
-            return func(*args, **kwargs)
+            return func(tweetchi, *args, **kwargs)
         except TwitterError, e:
-            tweetchi.app.log(e)
+            tweetchi.app.logger.error(str(e))
+    return wrapper
 
 
 class Tweetchi(object):
@@ -111,31 +112,31 @@ class Tweetchi(object):
 
     def reply(self):
         " Parse replays twitter beat. "
-        statuses = sorted(self.statuses())
-        tweetchi_reply.send(self, mentions=statuses)
+        statuses = sorted(self.mentions() or [])
         if statuses:
             self.since_id = statuses[-1].id
+        tweetchi_reply.send(self, mentions=statuses)
 
     @property
     def since_id(self):
         " Get last parst tweet_id from redis. "
-        return cache.get('tweetchi.since_id')
+        return cache.get('tweetchi.since_id.%s' % self.config.get('ACCOUNT')) or '1'
 
     @since_id.setter
     def since_id(self, value):
         " Save last parsed tweet_id to redis. "
         try:
-            cache.cache._client.set('tweetchi.since_id', value)
+            cache.cache._client.set('tweetchi.since_id.%s' % self.config.get('ACCOUNT'), value)
         except AttributeError:
-            cache.set('tweetchi.since_id', value)
+            cache.set('tweetchi.since_id.%s' % self.config.get('ACCOUNT'), value)
 
     @property
     def stack(self):
-        return cache.get('tweetchi.stack') or []
+        return cache.get('tweetchi.stack.%s' % self.config.get('ACCOUNT')) or []
 
     @stack.setter
     def stack(self, value):
-        cache.set('tweetchi.stack', value)
+        cache.set('tweetchi.stack.%s' % self.config.get('ACCOUNT'), value)
 
     def say(self, value, **params):
         stack = self.stack

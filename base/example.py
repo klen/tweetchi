@@ -13,7 +13,7 @@ def beat(tweetchi, updates=None):
 
 
 def reply(tweetchi, mentions=None):
-    for m in mentions:
+    for status in mentions:
         tweetchi.update(
-            '@%s Hello!' % m['user']['screen_name'],
-            in_reply_to_status_id=m['id_str'])
+            '@%s Hello!' % (status.user.screen_name),
+            in_reply_to_status_id=status.id)

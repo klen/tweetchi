@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# coding: utf-8
+
 from datetime import datetime
 
 
@@ -30,10 +33,13 @@ class Status:
         return self.id >= other.id
 
     def __str__(self):
-        return self.text
+        return self.id
 
     def __repr__(self):
-        return "<Status '%s'>" % str(self)
+        return u"<Status '%s'>" % self.id
+
+    def __getitem__(self, key):
+        return self.data[key]
 
 
 class User:
@@ -48,3 +54,6 @@ class User:
 
     def __repr__(self):
         return "<User '%s'>" % str(self)
+
+    def __getitem__(self, key):
+        return self.data[key]

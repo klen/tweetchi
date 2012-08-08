@@ -24,14 +24,12 @@ class TweetchiTest(TestCase):
         db.drop_all()
 
     def test_tweetchi(self):
-        from ..ext import cache
         self.assertEqual(tweetchi.app, self.app)
 
         tweetchi.since_id = 143
         self.assertEqual(tweetchi.since_id, 143)
-        self.assertEqual(cache.get('tweetchi.since_id'), 143)
 
-        cache.set('tweetchi.stack', [])
+        tweetchi.stack = []
         tweetchi.say(1)
         self.assertEqual(tweetchi.stack, [(1, {})])
 
