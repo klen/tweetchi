@@ -2,7 +2,7 @@ from __future__ import absolute_import
 
 from celery import Celery
 from flask import current_app as app
-from twitter import Twitter, OAuth
+from twitter import Twitter, OAuth, TwitterError
 
 from ..app import create_app
 from .tweetchi import tweetchi
@@ -44,4 +44,8 @@ def reply():
 @celery.task(ignore_result=True)
 def update(message, *args, **kwargs):
     twitter = Twitter(auth=OAuth(*args))
-    twitter.statuses.update(status=message, **kwargs)
+    try:
+        twitter.statuses.update(status=message, **kwargs)
+    except TwitterError, e:
+        logger = update.get_logger()
+        logger.error(e)
