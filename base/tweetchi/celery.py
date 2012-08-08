@@ -15,17 +15,17 @@ if not app:
 
 celery = Celery('tweetchi')
 celery.config_from_object(dict(
-    BROKER_URL='redis://localhost:6379/0',
+    BROKER_URL=tweetchi.config.get('BROKER_URL'),
     CELERY_ENABLE_UTC=True,
-    CELERY_TIMEZONE=tweetchi.timezone,
+    CELERY_TIMEZONE=tweetchi.config.get('TIMEZONE'),
     CELERYBEAT_SCHEDULE={
         'tweetchi-beat': {
             'task': 'base.tweetchi.celery.beat',
-            'schedule': tweetchi.beat_schedule
+            'schedule': tweetchi.config.get('BEAT_SCHEDULE'),
         },
         'tweetchi-reply': {
             'task': 'base.tweetchi.celery.reply',
-            'schedule': tweetchi.reply_schedule
+            'schedule': tweetchi.config.get('REPLAY_SCHEDULE'),
         },
     }
 ))

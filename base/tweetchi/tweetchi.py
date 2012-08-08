@@ -1,9 +1,22 @@
+from __future__ import absolute_import
+
 from datetime import timedelta
 
 from twitter import oauth_dance, Twitter, TwitterError, OAuth
+from celery.schedules import crontab
 
 from ..ext import cache
 from .signals import tweetchi_beat, tweetchi_reply
+
+
+def twitter_error(func):
+    " Catch twitter errors. "
+
+    def wrapper(tweetchi, *args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except TwitterError, e:
+            tweetchi.app.log(e)
 
 
 class Tweetchi(object):
@@ -14,20 +27,25 @@ class Tweetchi(object):
 
     def init_app(self, app):
         self.app = app
+        self.config = dict(
+            ACCOUNT=app.config.get('TWEETCHI_ACCOUNT', ''),
+            CONSUMER_KEY=app.config.get('TWEETCHI_CONSUMER_KEY', ''),
+            CONSUMER_SECRET=app.config.get('TWEETCHI_CONSUMER_SECRET', ''),
+            OAUTH_TOKEN=app.config.get('TWEETCHI_OAUTH_TOKEN', ''),
+            OAUTH_SECRET=app.config.get('TWEETCHI_OAUTH_SECRET', ''),
+            BEAT_SCHEDULE=app.config.get(
+                'TWEETCHI_BEAT_SCHEDULE', crontab(minute='*/60')),
+            REPLAY_SCHEDULE=app.config.get(
+                'TWEETCHI_REPLAY_SCHEDULE', timedelta(seconds=30)),
+            TIMEZONE=app.config.get('TWEETCHI_TIMEZONE', 'UTC'),
+            BROKER_URL=app.config.get('BROKER_URL'),
+        )
 
-        self.account = app.config.get('TWEETCHI_ACCOUNT', '')
-        self.consumer_key = app.config.get('TWEETCHI_CONSUMER_KEY', '')
-        self.consumer_secret = app.config.get('TWEETCHI_CONSUMER_SECRET', '')
-        self.oauth_token = app.config.get('TWEETCHI_OAUTH_TOKEN', '')
-        self.oauth_secret = app.config.get('TWEETCHI_OAUTH_SECRET', '')
-        self.beat_schedule = app.config.get(
-            'TWEETCHI_BEAT_SCHEDULE', timedelta(seconds=20))
-        self.reply_schedule = app.config.get(
-            'TWEETCHI_REPLAY_SCHEDULE', timedelta(seconds=40))
-        self.timezone = app.config.get('TWEETCHI_TIMEZONE', 'UTC')
-
-        self.twitter = Twitter(auth=OAuth(self.oauth_token, self.oauth_secret,
-                               self.consumer_key, self.consumer_secret))
+        self.twitter = Twitter(
+            auth=OAuth(
+                self.config.get(
+                    'OAUTH_TOKEN'), self.config.get('OAUTH_SECRET'),
+                self.config.get('CONSUMER_KEY'), self.config.get('CONSUMER_SECRET')))
         self.stack = []
 
         if not hasattr(self.app, 'extensions'):
@@ -35,35 +53,39 @@ class Tweetchi(object):
 
         self.app.extensions['tweetchi'] = self
 
+    @twitter_error
     def dance(self):
-        oauth_token, oauth_token_secret = oauth_dance(
-            self.account, self.consumer_key, self.consumer_secret)
+        " Get OAauth params. "
 
-        print "OAUTH_TOKEN: %s" % oauth_token
-        print "OAUTH_SECRET: %s" % oauth_token_secret
+        oauth_token, oauth_secret = oauth_dance(
+            self.config.get('ACCOUNT'), self.config.get('CONSUMER_KEY'), self.config.get('CONSUMER_SECRET'))
 
+        self.app.logger.info("OAUTH_TOKEN: %s", oauth_token)
+        self.app.logger.info("OAUTH_SECRET: %s", oauth_secret)
+
+    @twitter_error
     def update(self, message, async=False, **kwargs):
-        " Post twitter status. "
+        " Update twitter status. "
+
         self.app.logger.info('Tweetchi: "%s"' % message)
+
         if async:
             from .celery import update as cupdate
-            return cupdate.delay(
-                message, self.oauth_token, self.oauth_secret, self.consumer_key, self.consumer_secret, **kwargs)
+            return cupdate.delay(message,
+                                 self.config.get('OAUTH_TOKEN'),
+                                 self.config.get('OAUTH_SECRET'),
+                                 self.config.get('CONSUMER_KEY'),
+                                 self.config.get('CONSUMER_SECRET'), **kwargs)
 
-        try:
-            return self.twitter.statuses.update(status=message, **kwargs)
-        except TwitterError, e:
-            self.app.logger.info(message)
-            self.app.logger.error(e)
+        return self.twitter.statuses.update(status=message, **kwargs)
 
+    @twitter_error
     def mentions(self):
-        try:
-            return self.twitter.statuses.mentions(
-                since_id=self.since_id,
-                count=200)
+        " Get account mentions. "
 
-        except TwitterError, e:
-            self.app.logger.error(e)
+        return self.twitter.statuses.mentions(
+            since_id=self.since_id,
+            count=200)
 
     def beat(self):
         " Updates twitter beat. "
@@ -75,7 +97,6 @@ class Tweetchi(object):
         while stack:
             message, params = stack.pop(0)
             meta = params.pop('meta', None)
-            self.app.logger.info(message)
             response = self.update(message, **params)
             updates.append((response, meta))
 
@@ -99,11 +120,16 @@ class Tweetchi(object):
 
     @property
     def since_id(self):
-        return cache.get('tweetchi.since_id') or 100
+        " Get last parst tweet_id from redis. "
+        return cache.get('tweetchi.since_id')
 
     @since_id.setter
     def since_id(self, value):
-        cache.set('tweetchi.since_id', value, timeout=3600 * 24 * 30)
+        " Save last parsed tweet_id to redis. "
+        try:
+            cache.cache._client.set('tweetchi.since_id', value)
+        except AttributeError:
+            cache.set('tweetchi.since_id', value)
 
     @property
     def stack(self):
