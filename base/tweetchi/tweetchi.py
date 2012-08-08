@@ -44,6 +44,7 @@ class Tweetchi(object):
 
     def update(self, message, async=False, **kwargs):
         " Post twitter status. "
+        self.app.logger.info('Tweetchi: "%s"' % message)
         if async:
             from .celery import update as cupdate
             return cupdate.delay(
