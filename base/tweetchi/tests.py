@@ -1,27 +1,17 @@
-from flask_testing import TestCase
-
-from ..app import create_app
-from ..config import test
-from ..ext import db
+from ..core.tests import FlaskTest
 from .signals import tweetchi_beat
 from .tweetchi import tweetchi
 
 
-class TweetchiTest(TestCase):
-
-    def create_app(self):
-        return create_app(test)
+class TweetchiTest(FlaskTest):
 
     def setUp(self):
         tweetchi.stack = []
         tweetchi_beat._clear_state()
-        db.create_all()
 
     def tearDown(self):
         tweetchi.stack = []
         tweetchi_beat._clear_state()
-        db.session.remove()
-        db.drop_all()
 
     def test_tweetchi(self):
         self.assertEqual(tweetchi.app, self.app)
