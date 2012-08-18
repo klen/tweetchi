@@ -3,7 +3,8 @@ PIP=$(ENVBIN)/pip
 PYTHON=$(ENVBIN)/python
 PYBABEL=$(ENVBIN)/pybabel
 BABELDIR=$(CURDIR)/base/translations
-CONFIG=base.config.develop
+MODULE=base
+CONFIG=$(MODULE).config.develop
 
 all: .env
 
@@ -26,9 +27,13 @@ run: .env/ manage.py
 db: .env/ manage.py
 	$(PYTHON) manage.py migrate upgrade head -c $(CONFIG)
 
+.PHONY: audit
+audit:
+	pylama $(MODULE) -i E501
+
 .PHONY: test
-test: .env/ manage.py
-	$(PYTHON) manage.py test -c base.config.test
+test: .env/ manage.py audit
+	$(PYTHON) manage.py test -c $(MODULE).config.test
 
 .PHONY: clean
 clean:
@@ -47,3 +52,7 @@ $(BABELDIR)/ru:
 .PHONY: chown
 chown:
 	sudo chown $(USER):$(USER) -R $(CURDIR)
+
+.PHONY: pep8
+pep8:
+	find $(MODULE) -name "*.py" | xargs -n 1 autopep8 -i

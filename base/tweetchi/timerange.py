@@ -40,7 +40,8 @@ class timerange:
     def _to_tz(self, value):
         if not value.tzinfo:
             value = value.replace(tzinfo=self.tz)
-        temp = datetime.combine(date.today(), value) - value.tzinfo.utcoffset(utcdatetime)
+        temp = datetime.combine(
+            date.today(), value) - value.tzinfo.utcoffset(utcdatetime)
         return temp.time()
 
     def __contains__(self, value):

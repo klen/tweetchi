@@ -8,7 +8,8 @@ class Status:
 
     def __init__(self, data):
         self.id = data['id_str']
-        self.created_at = datetime.strptime(data['created_at'], "%a %b %d %H:%M:%S +0000 %Y")
+        self.created_at = datetime.strptime(
+            data['created_at'], "%a %b %d %H:%M:%S +0000 %Y")
         self.text = data['text']
         self.reply_id = data.get('in_reply_to_status_id_str')
         self.user = User(data['user'])

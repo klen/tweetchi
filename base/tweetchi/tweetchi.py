@@ -126,9 +126,11 @@ class Tweetchi(object):
     def since_id(self, value):
         " Save last parsed tweet_id to redis. "
         try:
-            cache.cache._client.set('tweetchi.since_id.%s' % self.config.get('ACCOUNT'), value)
+            cache.cache._client.set(
+                'tweetchi.since_id.%s' % self.config.get('ACCOUNT'), value)
         except AttributeError:
-            cache.set('tweetchi.since_id.%s' % self.config.get('ACCOUNT'), value)
+            cache.set(
+                'tweetchi.since_id.%s' % self.config.get('ACCOUNT'), value)
 
     @property
     def stack(self):
