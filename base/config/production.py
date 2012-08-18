@@ -35,8 +35,10 @@ TWEETCHI_CONSUMER_SECRET = "Z2NJuyf6lMU3lDTxoFAbKz7obkdOXjV3AgA4oLk1ns"
 TWEETCHI_ACCOUNT = 'Tweetchi'
 TWEETCHI_OAUTH_TOKEN = "633177233-o8Px6HR0uWWrun63xqCnO8iHSni2iFpMNoKgNQoJ"
 TWEETCHI_OAUTH_SECRET = "AmSqA4bICxLP79CFW1wFvXXvygecoqhPDJbhuFYNQ2w"
+BROKER_URL = 'redis://localhost:6379/0'
 
 CACHE_TYPE = 'redis'
 CACHE_REDIS_HOST = 'localhost'
 
 # pymode:lint_ignore=W0614,W404
+# flake8: noqa

@@ -1,9 +1,9 @@
 from datetime import datetime
 
-from sqlalchemy import Column, Integer, DateTime
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import object_mapper
 from sqlalchemy.orm.session import object_session
+from ..ext import db
 
 
 class UpdateMixin(object):
@@ -14,7 +14,7 @@ class UpdateMixin(object):
     .. code-block: python
 
         class Person(Base, UpdateMixin):
-            name = Column(String(19))
+            name = db.Column(String(19))
 
         >>> person = Person(name='foo')
         >>> person.update(**{'name': 'bar'})
@@ -33,20 +33,20 @@ class TimestampMixin(object):
     UPDATE. UTC time is used in both cases.
     """
 
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, onupdate=datetime.utcnow)
+    created_at = db.Column(
+        db.DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = db.Column(
+        db.DateTime, onupdate=datetime.utcnow, default=datetime.utcnow)
 
 
 class BaseMixin(UpdateMixin, TimestampMixin):
     """Provieds all benefits of
-    :class:`~pyramid_alchauth.models.UpdateMixin` and
-    :class:`~pyramid_alchauth.models.TimestampMixin` as well as
     providing a deform compatible appstruct property and an easy way to
     query VersionedMeta. It also defines an id column to save on boring
     boilerplate.
     """
 
-    id = Column(Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True)
 
     @declared_attr
     def __tablename__(self):
@@ -94,9 +94,14 @@ class BaseMixin(UpdateMixin, TimestampMixin):
         """
         mapper = object_mapper(self)
         return dict([(p.key, self.__getattribute__(p.key)) for
-            p in mapper.iterate_properties if
-            not self.__getattribute__(p.key) is None])
+                     p in mapper.iterate_properties if
+                     not self.__getattribute__(p.key) is None])
 
     @property
     def appstruct(self):
         return self.generate_appstruct()
+
+
+class Alembic(db.Model):
+    __tablename__ = 'alembic_version'
+    version_num = db.Column(db.String(32), nullable=False, primary_key=True)

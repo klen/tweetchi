@@ -1,14 +1,14 @@
+from flask import current_app
 from flask_testing import TestCase
 
-from ..app import create_app
-from ..config import test
 from ..ext import db
 
 
-class BaseCoreTest(TestCase):
+class FlaskTest(TestCase):
+    " Base flask test class. "
 
     def create_app(self):
-        return create_app(test)
+        return current_app
 
     def setUp(self):
         db.create_all()
@@ -16,6 +16,9 @@ class BaseCoreTest(TestCase):
     def tearDown(self):
         db.session.remove()
         db.drop_all()
+
+
+class CoreTest(FlaskTest):
 
     def test_home(self):
         response = self.client.get('/')
