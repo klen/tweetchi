@@ -41,3 +41,4 @@ CACHE_TYPE = 'redis'
 CACHE_REDIS_HOST = 'localhost'
 
 # pymode:lint_ignore=W0614,W404
+# flake8: noqa
