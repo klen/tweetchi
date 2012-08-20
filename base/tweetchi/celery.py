@@ -1,11 +1,15 @@
 from __future__ import absolute_import
 
 from celery import Celery
+from celery.utils.log import get_task_logger
 from flask import current_app as app
 from twitter import Twitter, OAuth, TwitterError
 
 from ..app import create_app
 from .tweetchi import tweetchi
+
+
+logger = get_task_logger('tweetchi')
 
 
 if not app:
@@ -47,5 +51,4 @@ def update(message, *args, **kwargs):
     try:
         twitter.statuses.update(status=message, **kwargs)
     except TwitterError, e:
-        logger = update.get_logger()
         logger.error(e)
