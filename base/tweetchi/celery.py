@@ -6,6 +6,8 @@ from flask import current_app as app
 from twitter import Twitter, OAuth, TwitterError
 
 from ..app import create_app
+from ..ext import db
+from .models import Status
 from .tweetchi import tweetchi
 
 
@@ -37,18 +39,30 @@ celery.config_from_object(dict(
 
 @celery.task(ignore_result=True)
 def beat():
+    " Tweetchi ticker. "
+
     tweetchi.beat()
 
 
 @celery.task(ignore_result=True)
 def reply():
+    " Parse replays. "
+
     tweetchi.reply()
 
 
 @celery.task(ignore_result=True)
 def update(message, *args, **kwargs):
+    " Async twitter update. "
+
     twitter = Twitter(auth=OAuth(*args))
     try:
-        twitter.statuses.update(status=message, **kwargs)
+        status = Status.create_from_status(
+            twitter.statuses.update(status=message, **kwargs))
+        db.session.add(status)
+        db.session.commit()
     except TwitterError, e:
         logger.error(e)
+
+
+# pymode:lint_ignore=E061
