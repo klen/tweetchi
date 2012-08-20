@@ -13,10 +13,10 @@ class Status(db.Model, BaseMixin):
     text = db.Column(db.String(200), nullable=False)
     in_reply_id_str = db.Column(db.String(20))
     screen_name = db.Column(db.String(30), nullable=False)
-    self = db.Column(db.Boolean, default=False)
+    myself = db.Column(db.Boolean, default=False)
 
     @staticmethod
-    def create_from_status(status, self=False):
+    def create_from_status(status, myself=False):
         " Create myself from twitter status data. "
 
         return Status(
@@ -26,7 +26,7 @@ class Status(db.Model, BaseMixin):
             text=status['text'],
             in_reply_id_str=status.get('in_reply_to_status_id_str'),
             screen_name=status['user']['screen_name'],
-            self=self
+            myself=myself
         )
 
     def __eq__(self, other):

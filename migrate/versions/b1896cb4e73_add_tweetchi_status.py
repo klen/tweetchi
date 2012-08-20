@@ -29,7 +29,7 @@ def upgrade():
         db.Column('text', db.String(200), nullable=False),
         db.Column('in_reply_id_str', db.String(20)),
         db.Column('screen_name', db.String(30), nullable=False),
-        db.Column('self', db.Boolean, default=False),
+        db.Column('myself', db.Boolean, default=False),
     )
 
 
