@@ -1,5 +1,8 @@
-from ..core.ext import admin
+from ..core.ext import admin, ModelView
 from .models import Status
 
 
-admin.add_model(Status)
+class StatusView(ModelView):
+    column_filters = 'username', 'email'
+
+admin.add_model(Status, ModelView)

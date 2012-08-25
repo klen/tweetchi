@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 
 from datetime import timedelta
+from random import choice
 
 from celery.schedules import crontab
 from twitter import oauth_dance, Twitter, TwitterError, OAuth
@@ -27,7 +28,8 @@ class Tweetchi(object):
         " Init tweetchi. "
         self.app = None
         self.config = dict()
-        self.twitter = None
+        self.twitter_api = None
+        self.twitter_search = Twitter(domain='search.twitter.com')
         self.key = 'tweetchi'
         if app:
             self.init_app(app)
@@ -49,10 +51,16 @@ class Tweetchi(object):
                     'TWEETCHI_REPLAY_SCHEDULE', timedelta(seconds=30)),
                 TIMEZONE=app.config.get('TWEETCHI_TIMEZONE', 'UTC'),
                 BROKER_URL=app.config.get('BROKER_URL'),
+                PROMOTE_SCHEDULE=app.config.get(
+                    'TWEETCHI_PROMOTE_SHEDULE', timedelta(hours=12)),
+                PROMOTE_QUERIES=app.config.get(
+                    'TWEETCHI_PROMOTE_QUERIES', []),
+                PROMOTE_REACTIONS=app.config.get(
+                    'TWEETCHI_PROMOTE_REACTIONS', []),
             )
         )
 
-        self.twitter = Twitter(
+        self.twitter_api = Twitter(
             auth=OAuth(
                 self.config.get(
                     'OAUTH_TOKEN'), self.config.get('OAUTH_SECRET'),
@@ -64,56 +72,6 @@ class Tweetchi(object):
             self.app.extensions = dict()
 
         self.app.extensions['tweetchi'] = self
-
-    @twitter_error
-    def dance(self):
-        " Get OAauth params. "
-
-        oauth_token, oauth_secret = oauth_dance(
-            self.config.get('ACCOUNT'), self.config.get('CONSUMER_KEY'), self.config.get('CONSUMER_SECRET'))
-
-        self.app.logger.info("OAUTH_TOKEN: %s", oauth_token)
-        self.app.logger.info("OAUTH_SECRET: %s", oauth_secret)
-
-    @twitter_error
-    def update(self, message, async=False, **kwargs):
-        " Update twitter status and save it in db. "
-
-        self.app.logger.info('Tweetchi: "%s"' % message)
-
-        if not async:
-
-            status = Status.create_from_status(
-                self.twitter.statuses.update(status=message, **kwargs),
-                myself=True)
-
-            db.session.add(status)
-            db.session.commit()
-
-            return status
-
-        from .celery import update as cupdate
-        cupdate.delay(message,
-                      self.config.get('OAUTH_TOKEN'),
-                      self.config.get('OAUTH_SECRET'),
-                      self.config.get('CONSUMER_KEY'),
-                      self.config.get('CONSUMER_SECRET'), **kwargs)
-
-    @twitter_error
-    def mentions(self, since_id=None):
-        " Get account mentions and save in db. "
-
-        params = dict(count=200)
-        if since_id:
-            params['since_id'] = since_id
-
-        mentions = sorted(map(
-            Status.create_from_status,
-            self.twitter.statuses.mentions(**params)))
-        db.session.add_all(mentions)
-        db.session.commit()
-
-        return mentions
 
     def beat(self):
         " Send signal and psrse self stack. "
@@ -145,6 +103,81 @@ class Tweetchi(object):
 
             if since_id:
                 tweetchi_reply.send(self, mentions=mentions)
+
+    @twitter_error
+    def search(self, **params):
+        return self.twitter_search.search(**params)
+
+    def promote(self):
+        queries = self.config.get('PROMOTE_QUERIES')
+        reactions = self.config.get('PROMOTE_REACTIONS')
+        if not queries or not reactions:
+            return False
+
+        # Get search results
+        for query in queries:
+            result = self.search(q=query, rpp=50)['results']
+            promoted = db.session.query(Status.in_reply_to_screen_name).\
+                distinct(Status.in_reply_to_screen_name).\
+                filter(Status.in_reply_to_screen_name.in_(s['from_user'] for s in result),
+                       Status.myself == True).\
+                all()
+            for s in filter(lambda s: not s['from_user'] in promoted, result):
+                self.update(
+                    "@%s %s" % (s['from_user'], choice(reactions)),
+                    async=True,
+                    in_reply_to_status_id=s['id_str']
+                )
+
+    @twitter_error
+    def dance(self):
+        " Get OAauth params. "
+
+        oauth_token, oauth_secret = oauth_dance(
+            self.config.get('ACCOUNT'), self.config.get('CONSUMER_KEY'), self.config.get('CONSUMER_SECRET'))
+
+        self.app.logger.info("OAUTH_TOKEN: %s", oauth_token)
+        self.app.logger.info("OAUTH_SECRET: %s", oauth_secret)
+
+    @twitter_error
+    def update(self, message, async=False, **kwargs):
+        " Update twitter status and save it in db. "
+
+        self.app.logger.info('Tweetchi: "%s"' % message)
+
+        if not async:
+
+            status = Status.create_from_status(
+                self.twitter_api.statuses.update(status=message, **kwargs),
+                myself=True)
+
+            db.session.add(status)
+            db.session.commit()
+
+            return status
+
+        from .celery import update as cupdate
+        cupdate.delay(message,
+                      self.config.get('OAUTH_TOKEN'),
+                      self.config.get('OAUTH_SECRET'),
+                      self.config.get('CONSUMER_KEY'),
+                      self.config.get('CONSUMER_SECRET'), **kwargs)
+
+    @twitter_error
+    def mentions(self, since_id=None):
+        " Get account mentions and save in db. "
+
+        params = dict(count=200)
+        if since_id:
+            params['since_id'] = since_id
+
+        mentions = sorted(map(
+            Status.create_from_status,
+            self.twitter_api.statuses.mentions(**params)))
+        db.session.add_all(mentions)
+        db.session.commit()
+
+        return mentions
 
     @property
     def since_id(self):

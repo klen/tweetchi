@@ -1,3 +1,5 @@
+from mock import Mock
+
 from ..core.tests import FlaskTest
 from ..ext import cache
 from .signals import tweetchi_beat, tweetchi_reply
@@ -38,8 +40,6 @@ class TweetchiTest(FlaskTest):
 
         tweetchi_beat.connect(beat)
 
-        from mock import Mock
-
         tweetchi.update = Mock()
         tweetchi.beat()
         self.assertEqual(tweetchi.stack, [('1 sheep', {'meta': 2})])
@@ -70,8 +70,6 @@ class TweetchiTest(FlaskTest):
         self.assertTrue(d in r3)
 
     def test_replays(self):
-        from mock import Mock
-
         tweetchi.mentions = Mock(return_value=[Status(
             id_str='10',
             screen_name='dummy',
@@ -124,3 +122,22 @@ class TweetchiTest(FlaskTest):
         self.assertFalse(status.myself)
 
         self.assertEqual(tweetchi.since_id, '14')
+
+    def test_promote(self):
+        tweetchi.search = Mock(return_value=dict(
+            results=[
+                dict(
+                    from_user='test_user',
+                    id_str='853108934',
+                ),
+                dict(
+                    from_user='test_user2',
+                    id_str='439801358',
+                ),
+            ]
+        ))
+        tweetchi.update = Mock()
+        tweetchi.config['PROMOTE_QUERIES'] = 'test', 'test2'
+        tweetchi.config['PROMOTE_REACTIONS'] = 'reaction1', 'reaction2'
+        tweetchi.promote()
+        self.assertTrue(tweetchi.update.call_args_list)

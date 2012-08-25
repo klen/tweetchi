@@ -33,6 +33,10 @@ celery.config_from_object(dict(
             'task': 'base.tweetchi.celery.reply',
             'schedule': tweetchi.config.get('REPLAY_SCHEDULE'),
         },
+        'tweetchi-spin': {
+            'task': 'base.tweetchi.celery.promote',
+            'schedule': tweetchi.config.get('PROMOTE_SCHEDULE'),
+        },
     }
 ))
 
@@ -52,13 +56,21 @@ def reply():
 
 
 @celery.task(ignore_result=True)
+def promote():
+    " Promote account. "
+
+    tweetchi.promote()
+
+
+@celery.task(ignore_result=True)
 def update(message, *args, **kwargs):
     " Async twitter update. "
 
     twitter = Twitter(auth=OAuth(*args))
     try:
         status = Status.create_from_status(
-            twitter.statuses.update(status=message, **kwargs))
+            twitter.statuses.update(status=message, **kwargs),
+            myself=True)
         db.session.add(status)
         db.session.commit()
     except TwitterError, e:

@@ -12,6 +12,7 @@ class Status(db.Model, BaseMixin):
     id_str = db.Column(db.String(20), nullable=False, unique=True)
     text = db.Column(db.String(200), nullable=False)
     in_reply_id_str = db.Column(db.String(20))
+    in_reply_to_screen_name = db.Column(db.String(30))
     screen_name = db.Column(db.String(30), nullable=False)
     myself = db.Column(db.Boolean, default=False)
 
@@ -25,6 +26,7 @@ class Status(db.Model, BaseMixin):
                 status['created_at'], "%a %b %d %H:%M:%S +0000 %Y"),
             text=status['text'],
             in_reply_id_str=status.get('in_reply_to_status_id_str'),
+            in_reply_to_screen_name=status.get('in_reply_to_screen_name'),
             screen_name=status['user']['screen_name'],
             myself=myself
         )
