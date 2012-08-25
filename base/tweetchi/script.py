@@ -17,3 +17,11 @@ def tweetchi_update(message):
     from .tweetchi import tweetchi
 
     tweetchi.update(message)
+
+
+@manager.command
+def tweetchi_new_followers(username):
+    from .tweetchi import tweetchi
+    from .utils import get_new_followers
+
+    print get_new_followers(tweetchi, username)
