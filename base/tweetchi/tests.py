@@ -139,5 +139,7 @@ class TweetchiTest(FlaskTest):
         tweetchi.update = Mock()
         tweetchi.config['PROMOTE_QUERIES'] = 'test', 'test2'
         tweetchi.config['PROMOTE_REACTIONS'] = 'reaction1', 'reaction2'
+        tweetchi.config['PROMOTE_LIMIT'] = 2
         tweetchi.promote()
+        self.assertEqual(tweetchi.update.call_count, 2)
         self.assertTrue(tweetchi.update.call_args_list)
