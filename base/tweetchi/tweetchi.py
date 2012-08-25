@@ -189,13 +189,15 @@ class Tweetchi(Api):
         # Get search results
         for query in queries:
             result = self.search(query)['results']
+            names = set(s['from_user'] for s in result)
             promoted = db.session.query(Status.in_reply_to_screen_name).\
                 distinct(Status.in_reply_to_screen_name).\
-                filter(Status.in_reply_to_screen_name.in_(s['from_user'] for s in result),
+                filter(Status.in_reply_to_screen_name.in_(names),
                        Status.myself == True).\
                 all()
+            promoted = set([r[0] for r in promoted])
 
-            for s in filter(lambda s: not s['from_user'] in promoted, result):
+            for s in [s for s in result if not s['from_user'] in promoted]:
                 limit -= 1
                 self.update(
                     "@%s %s" % (s['from_user'], choice(reactions)),
