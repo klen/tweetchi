@@ -57,6 +57,8 @@ class Tweetchi(object):
                     'TWEETCHI_PROMOTE_QUERIES', []),
                 PROMOTE_REACTIONS=app.config.get(
                     'TWEETCHI_PROMOTE_REACTIONS', []),
+                PROMOTE_LIMIT=app.config.get(
+                    'TWEETCHI_PROMOTE_LIMIT', 4),
             )
         )
 
@@ -113,23 +115,29 @@ class Tweetchi(object):
     def promote(self):
         queries = self.config.get('PROMOTE_QUERIES')
         reactions = self.config.get('PROMOTE_REACTIONS')
+        limit = self.config.get('PROMOTE_LIMIT')
+
         if not queries or not reactions:
             return False
 
         # Get search results
         for query in queries:
-            result = self.search(query, rpp=50)['results']
+            result = self.search(query)['results']
             promoted = db.session.query(Status.in_reply_to_screen_name).\
                 distinct(Status.in_reply_to_screen_name).\
                 filter(Status.in_reply_to_screen_name.in_(s['from_user'] for s in result),
                        Status.myself == True).\
                 all()
+
             for s in filter(lambda s: not s['from_user'] in promoted, result):
+                limit -= 1
                 self.update(
                     "@%s %s" % (s['from_user'], choice(reactions)),
                     async=True,
                     in_reply_to_status_id=s['id_str']
                 )
+                if not limit:
+                    return True
 
     @twitter_error
     def dance(self):
