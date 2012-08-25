@@ -105,8 +105,10 @@ class Tweetchi(object):
                 tweetchi_reply.send(self, mentions=mentions)
 
     @twitter_error
-    def search(self, **params):
-        return self.twitter_search.search(**params)
+    def search(self, query, **params):
+        if isinstance(query, unicode):
+            query = query.encode('utf-8')
+        return self.twitter_search.search(q=query, **params)
 
     def promote(self):
         queries = self.config.get('PROMOTE_QUERIES')
@@ -116,7 +118,7 @@ class Tweetchi(object):
 
         # Get search results
         for query in queries:
-            result = self.search(q=query, rpp=50)['results']
+            result = self.search(query, rpp=50)['results']
             promoted = db.session.query(Status.in_reply_to_screen_name).\
                 distinct(Status.in_reply_to_screen_name).\
                 filter(Status.in_reply_to_screen_name.in_(s['from_user'] for s in result),
