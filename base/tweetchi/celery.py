@@ -33,7 +33,7 @@ celery.config_from_object(dict(
             'task': 'base.tweetchi.celery.reply',
             'schedule': tweetchi.config.get('REPLAY_SCHEDULE'),
         },
-        'tweetchi-spin': {
+        'tweetchi-promote': {
             'task': 'base.tweetchi.celery.promote',
             'schedule': tweetchi.config.get('PROMOTE_SCHEDULE'),
         },

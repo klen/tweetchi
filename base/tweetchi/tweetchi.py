@@ -52,7 +52,7 @@ class Tweetchi(object):
                 TIMEZONE=app.config.get('TWEETCHI_TIMEZONE', 'UTC'),
                 BROKER_URL=app.config.get('BROKER_URL'),
                 PROMOTE_SCHEDULE=app.config.get(
-                    'TWEETCHI_PROMOTE_SHEDULE', timedelta(hours=12)),
+                    'TWEETCHI_PROMOTE_SCHEDULE', timedelta(hours=12)),
                 PROMOTE_QUERIES=app.config.get(
                     'TWEETCHI_PROMOTE_QUERIES', []),
                 PROMOTE_REACTIONS=app.config.get(
