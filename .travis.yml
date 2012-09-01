@@ -16,6 +16,6 @@ install:
     - pip install -IM -r requirements.txt
 
 script:
-    - python manage.py migrate upgrade head -c base.config.develop
+    - make db
     - make audit
     - make test
