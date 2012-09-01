@@ -1,11 +1,11 @@
 from flask import request
+from flask_collect import Collect
+from flask_debugtoolbar import DebugToolbarExtension
+from flask_mail import Mail
+from flask_script import Manager
 from flask_sqlalchemy import SQLAlchemy
 from flaskext.babel import Babel
 from flaskext.cache import Cache
-from flaskext.mail import Mail
-from flaskext.script import Manager
-from flask_collect import Collect
-from flask_debugtoolbar import DebugToolbarExtension
 
 from .app import create_app
 
@@ -13,7 +13,7 @@ from .app import create_app
 babel = Babel()
 cache = Cache()
 db = SQLAlchemy()
-main = Mail()
+mail = Mail()
 
 manager = Manager(create_app)
 manager.add_option("-c", "--config", dest="config", required=False)
@@ -27,7 +27,7 @@ def config_extensions(app):
 
     cache.init_app(app)
     db.init_app(app)
-    main.init_app(app)
+    mail.init_app(app)
     collect.init_app(app)
 
     DebugToolbarExtension(app)

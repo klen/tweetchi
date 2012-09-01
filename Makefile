@@ -32,7 +32,7 @@ audit:
 	pylama $(MODULE) -i E501
 
 .PHONY: test
-test: .env/ manage.py audit
+test: .env/ manage.py
 	$(PYTHON) manage.py test -c $(MODULE).config.test
 
 .PHONY: clean
@@ -56,3 +56,7 @@ chown:
 .PHONY: pep8
 pep8:
 	find $(MODULE) -name "*.py" | xargs -n 1 autopep8 -i
+
+.PHONY: celery
+celery:
+	celery worker -A base.tweetchi.celery.celery -B --loglevel=info
