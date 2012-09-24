@@ -1,3 +1,11 @@
+2012-09-25  klen
+
+	* Flask-Script 0.5.0
+
+2012-09-17  klen
+
+	* Add dealer (project revision control)
+
 2012-09-10  klen
 
 	* Flask-Principal>=0.3.3
