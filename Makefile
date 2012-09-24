@@ -32,7 +32,7 @@ run: .env/ manage.py
 # target: db - Init and migrate application db
 .PHONY: db
 db: .env/ manage.py
-	$(PYTHON) manage.py migrate upgrade head -c $(CONFIG)
+	$(PYTHON) manage.py alembic upgrade head -c $(CONFIG)
 
 
 # target: audit - Audit source code
@@ -43,7 +43,7 @@ audit:
 
 # target: test - Run tests
 .PHONY: test
-test: .env/ manage.py
+test: .env/ manage.py clean
 	$(PYTHON) manage.py test -c $(MODULE).config.test
 
 

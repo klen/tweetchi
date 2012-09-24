@@ -1,7 +1,7 @@
 " Flask based twitter bot application. "
 
 
-def register_app(app):
+def loader_meta(app):
     " Configure application. "
 
     from .tweetchi import tweetchi
