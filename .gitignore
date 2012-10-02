@@ -1,9 +1,10 @@
-*.pyc
+._
+base/config/local.py
+celerybeat-schedule
+.db
 .env
+*.py[co]
 .ropeproject
+.tags
 .tests
 .vimrc
-.db
-.tags
-._
-celerybeat-schedule
