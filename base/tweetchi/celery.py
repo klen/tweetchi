@@ -4,10 +4,11 @@ from celery import Celery
 from celery.utils.log import get_task_logger
 from flask import current_app as app
 from twitter import Twitter, OAuth, TwitterError
+from functools import wraps
+from sqlalchemy.exc import InvalidRequestError
 
 from ..app import create_app
-from ..ext import db
-from .models import Status
+from .models import Status, db
 from .tweetchi import tweetchi
 
 
@@ -41,7 +42,18 @@ celery.config_from_object(dict(
 ))
 
 
+def safe_session(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            func(*args, **kwargs)
+        except InvalidRequestError:
+            db.session.rollback()
+    return wrapper
+
+
 @celery.task(ignore_result=True)
+@safe_session
 def beat():
     " Tweetchi ticker. "
 
@@ -49,6 +61,7 @@ def beat():
 
 
 @celery.task(ignore_result=True)
+@safe_session
 def reply():
     " Parse replays. "
 
@@ -56,6 +69,7 @@ def reply():
 
 
 @celery.task(ignore_result=True)
+@safe_session
 def promote():
     " Promote account. "
 

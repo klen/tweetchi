@@ -1,3 +1,18 @@
+2012-10-02  klen
+
+	* Alembic 0.4.0
+
+2012-10-01  klen
+
+	* Flask-Cache 0.8.0
+
+2012-09-29  klen
+
+	* Flask-Mail 0.7.3
+	* Add Foundation logo and favicon
+	* Refactor OAuth support (Added facebook and Github as examples)
+	* Respect environmet variable "MODE"
+
 2012-09-25  klen
 
 	* Flask-Script 0.5.0

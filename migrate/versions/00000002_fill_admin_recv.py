@@ -9,30 +9,31 @@ from sqlalchemy.ext.declarative import declared_attr
 from werkzeug import generate_password_hash
 
 from base.core.models import BaseMixin
-from base.ext import db
+from flask_sqlalchemy import SQLAlchemy
+from flask import current_app
 
 
 revision = '00000002'
 down_revision = '00000001'
 
-db.metadata.clear()
+db = SQLAlchemy(current_app)
 
 
 class MigrateRole(db.Model, BaseMixin):
-    __tablename__ = 'users_role'
+    __tablename__ = 'auth_role'
     __table_args__ = {'extend_existing': True}
     name = db.Column(db.String(19), nullable=False, unique=True)
 
 userroles = db.Table(
-    'users_userroles',
-    db.Column('user_id', db.Integer, db.ForeignKey('users_user.id')),
-    db.Column('role_id', db.Integer, db.ForeignKey('users_role.id')),
+    'auth_userroles',
+    db.Column('user_id', db.Integer, db.ForeignKey('auth_user.id')),
+    db.Column('role_id', db.Integer, db.ForeignKey('auth_role.id')),
     extend_existing=True,
 )
 
 
 class MigrateUser(db.Model, BaseMixin):
-    __tablename__ = 'users_user'
+    __tablename__ = 'auth_user'
     __table_args__ = {'extend_existing': True}
     username = db.Column(db.String(50), unique=True)
     email = db.Column(db.String(120))
@@ -42,7 +43,7 @@ class MigrateUser(db.Model, BaseMixin):
     @declared_attr
     def roles(self):
         assert self
-        return db.relationship(MigrateRole, secondary=userroles, backref="users")
+        return db.relationship(MigrateRole, secondary=userroles, backref="auth")
 
 
 def upgrade():
